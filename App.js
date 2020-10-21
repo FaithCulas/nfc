@@ -43,6 +43,18 @@ class App extends Component {
           onPress={this._cleanUp}>
           <Text>Cancel Test</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            width: 200,
+            margin: 20,
+            borderWidth: 1,
+            borderColor: 'black',
+          }}
+          onPress={this.checkSupport}>
+          <Text>Check Support</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -68,6 +80,12 @@ class App extends Component {
       console.warn('ex', ex);
       this._cleanUp();
     }
+  };
+
+  checkSupport = () => {
+    NfcManager.isSupported(NfcTech.MifareClassic)
+      .then(() => console.log('Mifare classic is supported'))
+      .catch((err) => console.warn(err));
   };
 }
 
