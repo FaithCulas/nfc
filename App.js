@@ -1,120 +1,74 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
-import {View, Platform, Text, SafeAreaView, StyleSheet,TextInput, TouchableOpacity, Alert} from 'react-native';
-import NfcManager, {NfcEvents, NfcTech} from 'react-native-nfc-manager';
+import {View, Text, TouchableOpacity,SafeAreaView} from 'react-native';
+import NfcManager, {Ndef, NfcTech} from 'react-native-nfc-manager';
+
+function buildUrlPayload(valueToWrite) {
+  return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
+}
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      log: 'Ready',
-      text: '',
-    };
-  }
   componentDidMount() {
     NfcManager.start();
   }
 
   componentWillUnmount() {
-    this.cleanup();
-  } 
- 
-  cleanup = () => {};
+    this._cleanUp();
+  }
 
-  onChangeText = (text) => {
-    this.setState({
-      text,
-    });
-  };
-
-  writeData = async () => {
-    //if (!this.state.text){
-      //Alert.alert('enter some text');
-    //}
-    try {
-      let tech = Platform.OS === 'android' ? NfcTech.MifareClassic : NfcTech.NfcA;
-      let resp = await NfcManager.requestTechnology(tech, {
-        alertMessage: "Ready for magic"
-      })
-    } catch (err) {
-      this.setState({
-        log: err.toString(),
-      });
-      this.cleanup();
-    }
-  };
-  readData = async () => {}
   render() {
     return (
-      <SafeAreaView style={styles.container}>
-        <TextInput
-          style={styles.TextInput}
-          onChangeText={this.onChangeText}
-          autoCompleteType="off"
-          auutoCapitalize="none"
-          autoCorrect={false}
-          placeholderTextColor="#888888"
-          placeholder="enter text here"
-        />
-        <TouchableOpacity onPress={this.writeData} style={styles.buttonWrite}>
-          <Text style={styles.buttonText}>Write</Text>
+      <SafeAreaView style={{padding: 20}}>
+        <Text>NFC Demo</Text>
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            width: 200,
+            margin: 20,
+            borderWidth: 1,
+            borderColor: 'black',
+          }}
+          onPress={this._testNdef}>
+          <Text>Test Ndef</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={this.readData} style={styles.buttonRead}>
-          <Text style={styles.buttonText}>Read</Text>
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            width: 200,
+            margin: 20,
+            borderWidth: 1,
+            borderColor: 'black',
+          }}
+          onPress={this._cleanUp}>
+          <Text>Cancel Test</Text>
         </TouchableOpacity>
-
-        <View style={styles.log}>
-          <Text>{this.state.log}</Text>
-        </View>
       </SafeAreaView>
     );
   }
+
+  _cleanUp = () => {
+    NfcManager.cancelTechnologyRequest().catch(() => 0);
+  };
+
+  _testNdef = async () => {
+    try {
+      let resp = await NfcManager.requestTechnology(NfcTech.Ndef, {
+        alertMessage: 'Ready to write some NFC tags!',
+      });
+      console.warn(resp);
+      let ndef = await NfcManager.getNdefMessage();
+      console.warn(ndef);
+      let bytes = buildUrlPayload('https://www.revteltech.com');
+      await NfcManager.writeNdefMessage(bytes);
+      console.warn('successfully write ndef');
+      await NfcManager.setAlertMessageIOS('I got your tag!');
+      this._cleanUp();
+    } catch (ex) {
+      console.warn('ex', ex);
+      this._cleanUp();
+    }
+  };
 }
 
 export default App;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  textInput: {
-    marginLeft: 20,
-    marginRight: 20,
-    height: 50,
-    marginBottom: 10,
-    textAlign: 'center',
-    color: 'black',
-  },
-  buttonWrite: {
-    marginLeft: 20,
-    marginRight: 20,
-    height: 50,
-    marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: '#9D2235',
-  },
-  buttonRead: {
-    marginLeft: 20,
-    marginRight: 20,
-    height: 50,
-    marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: '#006C5B',
-  },
-  buttonText: {
-    color: 'white',
-  },
-  log: {
-    marginTop: 30,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
