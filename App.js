@@ -1,10 +1,11 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
-import {View, Text, TouchableOpacity,SafeAreaView} from 'react-native';
+import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
 import NfcManager, {Ndef, NfcTech} from 'react-native-nfc-manager';
 
 function buildUrlPayload(valueToWrite) {
-  return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
+  //return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
+  return Ndef.encodeMessage([Ndef.textRecord(valueToWrite)]);
 }
 
 class App extends Component {
@@ -71,7 +72,7 @@ class App extends Component {
       console.warn(resp);
       let ndef = await NfcManager.getNdefMessage();
       console.warn(ndef);
-      let bytes = buildUrlPayload('https://www.revteltech.com');
+      let bytes = buildUrlPayload('hello, world');
       await NfcManager.writeNdefMessage(bytes);
       console.warn('successfully write ndef');
       await NfcManager.setAlertMessageIOS('I got your tag!');
