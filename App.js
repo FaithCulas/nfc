@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
-import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
-import NfcManager, {Ndef, NfcEvents, NfcTech, NfcAdapter} from 'react-native-nfc-manager';
+import {Text, TouchableOpacity, SafeAreaView, Platform} from 'react-native';
+import NfcManager, {Ndef, NfcEvents, NfcTech} from 'react-native-nfc-manager';
 
 function buildUrlPayload(valueToWrite) {
   //return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
@@ -12,10 +12,11 @@ function buildUrlPayload(valueToWrite) {
 class App extends Component {
   componentDidMount() {
     NfcManager.start();
+    /* console.log('started');
     NfcManager.setEventListener(NfcEvents.DiscoverTag, (tag) => {
       console.warn('tag', tag);
       NfcManager.unregisterTagEvent().catch(() => 0);
-    });
+    }); */
   }
 
   componentWillUnmount() {
@@ -72,28 +73,27 @@ class App extends Component {
 
   _testNdef = async () => {
     try {
-      await NfcManager.registerTagEvent(
-        (tag) => {
-          console.log('Tag Discovered', tag);
-        },
-        'Hold your device over the tag',
-        {
-          isReaderModeEnabled: true,
-          readerModeFlags:
-            NfcAdapter.FLAG_READER_NFC_A |
-            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-        },
-      );
-      // try this part after you try the code...
-      /* let resp = await NfcManager.requestTechnology(NfcTech.Ndef, {
-        alertMessage: 'Ready to write some NFC tags!',
+      let tech = Platform.OS === 'ios' ? NfcTech.MifareIOS : NfcTech.NfcA;
+      let resp = await NfcManager.requestTechnology(tech, {
+        alertMessage: 'Ready to do some custom Mifare cmd!',
       });
       console.warn(resp);
-      const ndef = await NfcManager.getNdefMessage();
-      console.log(ndef); */
+
+      // the NFC uid can be found in tag.id
+      let tag = await NfcManager.getTag();
+      console.warn(tag);
+
+      if (Platform.OS === 'ios') {
+        resp = await NfcManager.sendMifareCommandIOS([0x30, 0x00]);
+      } else {
+        resp = await NfcManager.transceive([0x30, 0x00]);
+      }
+      console.warn(resp);
+
+      this._cleanUp();
     } catch (ex) {
       console.warn('ex', ex);
-      NfcManager.unregisterTagEvent().catch(() => 0);
+      this._cleanUp();
     }
   };
 
