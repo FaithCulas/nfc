@@ -1,7 +1,8 @@
+/* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
 import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
-import NfcManager, {Ndef, NfcEvents, NfcTech} from 'react-native-nfc-manager';
+import NfcManager, {Ndef, NfcEvents, NfcTech, NfcAdapter} from 'react-native-nfc-manager';
 
 function buildUrlPayload(valueToWrite) {
   //return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
@@ -71,7 +72,25 @@ class App extends Component {
 
   _testNdef = async () => {
     try {
-      await NfcManager.registerTagEvent();
+      await NfcManager.registerTagEvent(
+        (tag) => {
+          console.log('Tag Discovered', tag);
+        },
+        'Hold your device over the tag',
+        {
+          isReaderModeEnabled: true,
+          readerModeFlags:
+            NfcAdapter.FLAG_READER_NFC_A |
+            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+        },
+      );
+      // try this part after you try the code...
+      /* let resp = await NfcManager.requestTechnology(NfcTech.Ndef, {
+        alertMessage: 'Ready to write some NFC tags!',
+      });
+      console.warn(resp);
+      const ndef = await NfcManager.getNdefMessage();
+      console.log(ndef); */
     } catch (ex) {
       console.warn('ex', ex);
       NfcManager.unregisterTagEvent().catch(() => 0);
