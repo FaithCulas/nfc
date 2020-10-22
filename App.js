@@ -1,7 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
 import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
-import NfcManager, {Ndef, NfcTech} from 'react-native-nfc-manager';
+import NfcManager, {Ndef, NfcEvents, NfcTech} from 'react-native-nfc-manager';
 
 function buildUrlPayload(valueToWrite) {
   //return Ndef.encodeMessage([Ndef.uriRecord(valueToWrite)]);
@@ -11,10 +11,15 @@ function buildUrlPayload(valueToWrite) {
 class App extends Component {
   componentDidMount() {
     NfcManager.start();
+    NfcManager.setEventListener(NfcEvents.DiscoverTag, (tag) => {
+      console.warn('tag', tag);
+      NfcManager.unregisterTagEvent().catch(() => 0);
+    });
   }
 
   componentWillUnmount() {
-    this._cleanUp();
+    NfcManager.setEventListener(NfcEvents.DiscoverTag, null);
+    NfcManager.unregisterTagEvent().catch(() => 0);
   }
 
   render() {
@@ -61,25 +66,15 @@ class App extends Component {
   }
 
   _cleanUp = () => {
-    NfcManager.cancelTechnologyRequest().catch(() => 0);
+    NfcManager.unregisterTagEvent().catch(() => 0);
   };
 
   _testNdef = async () => {
     try {
-      let resp = await NfcManager.requestTechnology(NfcTech.Ndef, {
-        alertMessage: 'Ready to write some NFC tags!',
-      });
-      console.warn(resp);
-      let ndef = await NfcManager.getNdefMessage();
-      console.warn(ndef);
-      let bytes = buildUrlPayload('hello, world');
-      await NfcManager.writeNdefMessage(bytes);
-      console.warn('successfully write ndef');
-      await NfcManager.setAlertMessageIOS('I got your tag!');
-      this._cleanUp();
+      await NfcManager.registerTagEvent();
     } catch (ex) {
       console.warn('ex', ex);
-      this._cleanUp();
+      NfcManager.unregisterTagEvent().catch(() => 0);
     }
   };
 
