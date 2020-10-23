@@ -1,31 +1,42 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
-import React, {Component} from 'react';
-import {Text, TouchableOpacity, SafeAreaView, Platform} from 'react-native';
-import NfcManager, {Ndef, NfcEvents, NfcTech} from 'react-native-nfc-manager';
+import React from 'react';
+import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
 import NFC from 'react-native-rfid-nfc-scanner';
 
 export default function App() {
   //const scanner = new NfcRfidScanner();
 
   const initiate = () => {
-    NFC.initialize();
-    console.log('scanner is initiated');
+    let x = NFC.initialize();
+    //console.log('scanner is initiated');
+    console.log('initiated ? :', x);
   };
 
   const stopScan = () => {
-    NFC.stopScan();
-    console.log('stopped');
+    let z = NFC.stopScan();
+    console.log('stopped :', z);
   };
 
   const isEnabled = () => {
-    NFC.isEnabled();
-    console.log('scanner is enabled');
+    let y = NFC.isEnabled();
+    //console.log('scanner is enabled');
+    console.log('enabled is', y);
   };
 
   const getStatus = () => {
     let status = NFC.checkDeviceStatus();
     console.log('status is ', status);
+  };
+
+  const addListener = () => {
+    let listener = NFC.addListener();
+    console.log('listener :', listener);
+  };
+
+  const removeAllListener = () => {
+    let t = NFC.removeAllListeners();
+    console.log('removed : ', t);
   };
 
   return (
@@ -77,6 +88,30 @@ export default function App() {
         }}
         onPress={getStatus}>
         <Text>Get Status</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={addListener}>
+        <Text>Add Listener</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={removeAllListener}>
+        <Text>Remove all listeners</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
