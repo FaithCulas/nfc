@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import {Text, TouchableOpacity, SafeAreaView} from 'react-native';
-import NFC from 'react-native-rfid-nfc-scanner';
+import {Text, TouchableOpacity, SafeAreaView, ToastAndroid} from 'react-native';
+import NFC, {NfcDataType, NdefRecordType} from 'react-native-rfid-nfc-scanner';
 
 export default function App() {
   //const scanner = new NfcRfidScanner();
@@ -30,7 +30,34 @@ export default function App() {
   };
 
   const addListener = () => {
-    let listener = NFC.addListener();
+    let listener = NFC.addListener((payload) => {
+      switch (payload.type) {
+        case NfcDataType.NDEF:
+          let messages = payload.data;
+          for (let i in messages) {
+            let records = messages[i];
+            for (let j in records) {
+              let r = records[j];
+              if (r.type === NdefRecordType.TEXT) {
+                console.log(r);
+              } else {
+                ToastAndroid.show(
+                  `Non-TEXT tag of type ${r.type} with data ${r.data}`,
+                  ToastAndroid.SHORT,
+                );
+              }
+            }
+          }
+          break;
+
+        case NfcDataType.TAG:
+          ToastAndroid.show(
+            `The TAG is non-NDEF:\n\n${payload.data.description}`,
+            ToastAndroid.SHORT,
+          );
+          break;
+      }
+    });
     console.log('listener :', listener);
   };
 
@@ -38,6 +65,7 @@ export default function App() {
     let t = NFC.removeAllListeners();
     console.log('removed : ', t);
   };
+
 
   return (
     <SafeAreaView style={{padding: 20}}>
