@@ -10,6 +10,8 @@ target 'mobileApp' do
 
   pod 'react-native-nfc-manager', :path => '../node_modules/react-native-nfc-manager'
 
+  pod 'react-native-rfid-nfc', :path => '../node_modules/react-native-rfid-nfc-scanner'
+
   target 'mobileAppTests' do
     inherit! :complete
     # Pods for testing
