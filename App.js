@@ -3,23 +3,28 @@
 import React, {Component} from 'react';
 import {Text, TouchableOpacity, SafeAreaView, Platform} from 'react-native';
 import NfcManager, {Ndef, NfcEvents, NfcTech} from 'react-native-nfc-manager';
-import {NfcRfidScanner} from 'react-native-rfid-nfc-scanner';
+import NFC from 'react-native-rfid-nfc-scanner';
 
 export default function App() {
-  const scanner = new NfcRfidScanner();
+  //const scanner = new NfcRfidScanner();
 
   const initiate = () => {
-    scanner.init();
+    NFC.initialize();
     console.log('scanner is initiated');
   };
 
+  const stopScan = () => {
+    NFC.stopScan();
+    console.log('stopped');
+  };
+
   const isEnabled = () => {
-    scanner.isEnabled();
+    NFC.isEnabled();
     console.log('scanner is enabled');
   };
 
   const getStatus = () => {
-    let status = scanner.getStatus();
+    let status = NFC.checkDeviceStatus();
     console.log('status is ', status);
   };
 
@@ -48,6 +53,18 @@ export default function App() {
         }}
         onPress={isEnabled}>
         <Text>is Enabled ? </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={stopScan}>
+        <Text>stop scan </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
