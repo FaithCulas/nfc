@@ -1,7 +1,13 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import {Text, TouchableOpacity, SafeAreaView, ToastAndroid} from 'react-native';
+import {
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  ToastAndroid,
+  Platform,
+} from 'react-native';
 import NFC, {NfcDataType, NdefRecordType} from 'react-native-rfid-nfc-scanner';
 
 export default function App() {
@@ -65,8 +71,40 @@ export default function App() {
     let t = NFC.removeAllListeners();
     console.log('removed : ', t);
   };
-
-
+  let _listeners = {};
+  let _notifyListeners = (data) => {
+    let payload = {
+      from_device: data,
+      id: null,
+      type: null,
+      origin: null,
+      encoding: null,
+      scanned: null,
+    };
+    payload.origin = data.origin;
+    payload.id = data.id;
+    payload.type = data.type;
+    console.log(payload);
+    if (Platform.OS !== 'ios' && data.type === 'TAG') {
+      let tagType = data.data.techList[0];
+      payload.from_device.data = [[data.data]];
+      payload.encoding = 'UTF-8';
+      payload.type = tagType.replace('android.nfc.tech.', '');
+      payload.scanned = data.id;
+    } else {
+      if (data.data[0] && data.data[0][0]) {
+        let dat = data.data[0][0];
+        payload.encoding = dat.encoding;
+        payload.scanned = dat.data;
+      }
+      console.log(payload);
+    }
+    if (data) {
+      for (let _listener in _listeners) {
+        _listeners[_listener](payload);
+      }
+    }
+  };
   return (
     <SafeAreaView style={{padding: 20}}>
       <Text>NFC SCANNER</Text>
@@ -126,7 +164,7 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={addListener}>
+        onPress={_notifyListeners}>
         <Text>Add Listener</Text>
       </TouchableOpacity>
 
