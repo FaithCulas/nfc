@@ -140,7 +140,7 @@ export default function App() {
               console.log('succcess');
             },
             (e) => {
-              console.log('error:');
+              console.log('error:',e);
             },
           );
         }}>
