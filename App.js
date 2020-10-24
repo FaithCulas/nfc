@@ -117,9 +117,7 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={() => {
-          console.log('enabled is :', NfcManager.isEnabled);
-        }}>
+        onPress={Enabled}>
         <Text>is Enabled ? </Text>
       </TouchableOpacity>
 
