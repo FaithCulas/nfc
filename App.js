@@ -71,6 +71,7 @@ export default function App() {
     let t = NFC.removeAllListeners();
     console.log('removed : ', t);
   };
+
   let _listeners = {};
   let _notifyListeners = (data) => {
     let payload = {
@@ -164,7 +165,7 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={_notifyListeners}>
+        onPress={NFC.addListener(_notifyListeners)}>
         <Text>Add Listener</Text>
       </TouchableOpacity>
 
