@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable no-bitwise */
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
@@ -8,63 +9,43 @@ import {
   ToastAndroid,
   Platform,
 } from 'react-native';
-import NFC, {NfcDataType, NdefRecordType} from 'react-native-rfid-nfc-scanner';
+import NFC, {
+  NfcRfidScanner,
+  NfcDataType,
+  NdefRecordType,
+} from 'react-native-rfid-nfc-scanner';
 
 export default function App() {
-  //const scanner = new NfcRfidScanner();
+  const scanner = new NfcRfidScanner();
 
   const initiate = () => {
     let x = NFC.initialize();
+    let X_scanner = scanner.init();
     //console.log('scanner is initiated');
     console.log('initiated ? :', x);
+    console.log('scanner initiated ? :', X_scanner);
   };
 
   const stopScan = () => {
     let z = NFC.stopScan();
+    let z_scanner = scanner.stopScan();
     console.log('stopped :', z);
+    console.log('scanner stopped :', z_scanner);
   };
 
   const isEnabled = () => {
     let y = NFC.isEnabled();
+    let y_scanner = scanner.isEnabled();
     //console.log('scanner is enabled');
     console.log('enabled is', y);
+    console.log('scanner enabled is', y_scanner);
   };
 
   const getStatus = () => {
     let status = NFC.checkDeviceStatus();
+    let s_scanner = scanner.getStatus();
     console.log('status is ', status);
-  };
-
-  const addListener = () => {
-    let listener = NFC.addListener((payload) => {
-      switch (payload.type) {
-        case NfcDataType.NDEF:
-          let messages = payload.data;
-          for (let i in messages) {
-            let records = messages[i];
-            for (let j in records) {
-              let r = records[j];
-              if (r.type === NdefRecordType.TEXT) {
-                console.log(r);
-              } else {
-                ToastAndroid.show(
-                  `Non-TEXT tag of type ${r.type} with data ${r.data}`,
-                  ToastAndroid.SHORT,
-                );
-              }
-            }
-          }
-          break;
-
-        case NfcDataType.TAG:
-          ToastAndroid.show(
-            `The TAG is non-NDEF:\n\n${payload.data.description}`,
-            ToastAndroid.SHORT,
-          );
-          break;
-      }
-    });
-    console.log('listener :', listener);
+    console.log('scanner status is ', s_scanner);
   };
 
   const removeAllListener = () => {
@@ -73,37 +54,23 @@ export default function App() {
   };
 
   let _listeners = {};
-  let _notifyListeners = (data) => {
-    let payload = {
-      from_device: data,
-      id: null,
-      type: null,
-      origin: null,
-      encoding: null,
-      scanned: null,
-    };
-    payload.origin = data.origin;
-    payload.id = data.id;
-    payload.type = data.type;
-    console.log(payload);
-    if (Platform.OS !== 'ios' && data.type === 'TAG') {
-      let tagType = data.data.techList[0];
-      payload.from_device.data = [[data.data]];
-      payload.encoding = 'UTF-8';
-      payload.type = tagType.replace('android.nfc.tech.', '');
-      payload.scanned = data.id;
-    } else {
-      if (data.data[0] && data.data[0][0]) {
-        let dat = data.data[0][0];
-        payload.encoding = dat.encoding;
-        payload.scanned = dat.data;
+  let _notifyListeners = (payload) => {
+    try {
+      console.log('in');
+      switch (payload.type) {
+        case NfcDataType.NDEF:
+          let messages = payload.data;
+          for (let i in messages) {
+            let records = messages[i];
+            for (let j in records) {
+              let r = records[j];
+              //if (r.type === NdefRecordType.TEXT) {
+              console.log(r);
+            }
+          }
       }
-      console.log(payload);
-    }
-    if (data) {
-      for (let _listener in _listeners) {
-        _listeners[_listener](payload);
-      }
+    } catch (ex) {
+      console.warn('ex', ex);
     }
   };
   return (
@@ -165,7 +132,18 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={NFC.addListener(_notifyListeners)}>
+        onPress={() => {
+          NFC.addListener(
+            'name',
+            (payload) => {
+              alert(payload.data.id);
+              console.log('succcess');
+            },
+            (e) => {
+              console.log('error:');
+            },
+          );
+        }}>
         <Text>Add Listener</Text>
       </TouchableOpacity>
 
