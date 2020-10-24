@@ -9,70 +9,67 @@ import {
   ToastAndroid,
   Platform,
 } from 'react-native';
-import NFC, {
-  NfcRfidScanner,
-  NfcDataType,
-  NdefRecordType,
-} from 'react-native-rfid-nfc-scanner';
+import NfcManager, {
+  NfcEvents,
+  NfcTech,
+  NfcAdapter,
+  NdefParser,
+} from 'react-native-nfc-manager';
 
 export default function App() {
-  const scanner = new NfcRfidScanner();
-
-  const initiate = () => {
-    let x = NFC.initialize();
-    let X_scanner = scanner.init();
-    //console.log('scanner is initiated');
-    console.log('initiated ? :', x);
-    console.log('scanner initiated ? :', X_scanner);
+  const Start = () => {
+    NfcManager.start();
+    NfcManager.setEventListener(NfcEvents.DiscoverTag, (tag) => {
+      console.warn('tag', tag);
+      NfcManager.setAlertMessageIOS('I got your tag!');
+      NfcManager.unregisterTagEvent().catch(() => 0);
+    });
   };
 
-  const stopScan = () => {
-    let z = NFC.stopScan();
-    let z_scanner = scanner.stopScan();
-    console.log('stopped :', z);
-    console.log('scanner stopped :', z_scanner);
-  };
-
-  const isEnabled = () => {
-    let y = NFC.isEnabled();
-    let y_scanner = scanner.isEnabled();
-    //console.log('scanner is enabled');
-    console.log('enabled is', y);
-    console.log('scanner enabled is', y_scanner);
-  };
-
-  const getStatus = () => {
-    let status = NFC.checkDeviceStatus();
-    let s_scanner = scanner.getStatus();
-    console.log('status is ', status);
-    console.log('scanner status is ', s_scanner);
-  };
-
-  const removeAllListener = () => {
-    let t = NFC.removeAllListeners();
-    console.log('removed : ', t);
-  };
-
-  let _listeners = {};
-  let _notifyListeners = (payload) => {
+  const Read = async () => {
     try {
-      console.log('in');
-      switch (payload.type) {
-        case NfcDataType.NDEF:
-          let messages = payload.data;
-          for (let i in messages) {
-            let records = messages[i];
-            for (let j in records) {
-              let r = records[j];
-              //if (r.type === NdefRecordType.TEXT) {
-              console.log(r);
-            }
-          }
-      }
+      await NfcManager.registerTagEvent(
+        (tag) => {
+          console.log('Tag Discovered', tag);
+        },
+        'Hold your device over the tag',
+        {
+          invalidateAfterFirstRead: true,
+          isReaderModeEnabled: true,
+          readerModeFlags:
+            NfcAdapter.FLAG_READER_NFC_A |
+            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+        },
+      );
     } catch (ex) {
       console.warn('ex', ex);
+      NfcManager.unregisterTagEvent().catch(() => 0);
     }
   };
+
+  const Support = () => {
+    NfcManager.isSupported(NfcTech.MifareClassic)
+      .then(() => console.log('Mifare classic is supported'))
+      .catch((err) => console.warn(err));
+  };
+
+  const Enabled = () => {
+    console.log('enabled is :', NfcManager.isEnabled);
+  };
+
+  const readNdef = () => {
+    NfcManager.registerTagEvent((tag) => console.log(tag))
+      .then(() => NfcManager.requestTechnology(NfcTech.Ndef))
+      .then(() => NfcManager.getTag())
+      .then((tag) => {
+        console.log(JSON.stringify(tag));
+      })
+      .then(() => NfcManager.getNdefMessage())
+      .then((tag) => {
+        console.log('tag is ', tag);
+      });
+  };
+
   return (
     <SafeAreaView style={{padding: 20}}>
       <Text>NFC SCANNER</Text>
@@ -84,7 +81,7 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={initiate}>
+        onPress={Start}>
         <Text>Initiate Scanner</Text>
       </TouchableOpacity>
 
@@ -96,7 +93,31 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={isEnabled}>
+        onPress={Read}>
+        <Text>Read</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={Support}>
+        <Text>is Supported ? </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{
+          padding: 10,
+          width: 200,
+          margin: 20,
+          borderWidth: 1,
+          borderColor: 'black',
+        }}
+        onPress={Enabled}>
         <Text>is Enabled ? </Text>
       </TouchableOpacity>
 
@@ -108,55 +129,8 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={stopScan}>
-        <Text>stop scan </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={getStatus}>
-        <Text>Get Status</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={() => {
-          NFC.addListener(
-            'name',
-            (payload) => {
-              alert(payload.data.id);
-              console.log('succcess');
-            },
-            (e) => {
-              console.log('error:');
-            },
-          );
-        }}>
-        <Text>Add Listener</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={removeAllListener}>
-        <Text>Remove all listeners</Text>
+        onPress={readNdef}>
+        <Text>Read Ndef </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
