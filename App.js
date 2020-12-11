@@ -16,74 +16,76 @@ import NfcManager, {
   NdefParser,
 } from 'react-native-nfc-manager';
 
-export default function App() {
-  const Start = () => {
-    NfcManager.start();
-    NfcManager.setEventListener(NfcEvents.DiscoverTag, (tag) => {
-      console.warn('tag', tag);
-      NfcManager.setAlertMessageIOS('I got your tag!');
-      NfcManager.unregisterTagEvent().catch(() => 0);
-    });
-  };
+class App extends React.Component {
 
-  const Read = async () => {
+
+  componentDidMount(){
+    NfcManager.start();
+    NfcManager.setEventListener(NfcEvents.DiscoverTag, this._onTagDiscovered);
+  }
+  componentWillUnmount() {
+    this._cleanUp();
+    NfcManager.setEventListener(NfcEvents.DiscoverTag, null);
+    NfcManager.unregisterTagEvent().catch(() => 0);
+  }
+  _cleanUp = () => {
+    NfcManager.cancelTechnologyRequest().catch(() => 0);
+  }
+  readData = async () => {
     try {
-      await NfcManager.registerTagEvent(
-        (tag) => {
-          console.log('Tag Discovered', tag);
-        },
-        'Hold your device over the tag',
-        {
-          invalidateAfterFirstRead: true,
-          isReaderModeEnabled: true,
-          readerModeFlags:
-            NfcAdapter.FLAG_READER_NFC_A |
-            NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
-        },
-      );
+      await NfcManager.registerTagEvent()
+
     } catch (ex) {
       console.warn('ex', ex);
       NfcManager.unregisterTagEvent().catch(() => 0);
     }
-  };
+  }
+  _onTagDiscovered = tag => {
+    this.setState({ tag });
 
-  const Support = () => {
-    NfcManager.isSupported(NfcTech.MifareClassic)
-      .then(() => console.log('Mifare classic is supported'))
-      .catch((err) => console.warn(err));
-  };
+    let parsed = null;
+    if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+        // ndefMessage is actually an array of NdefRecords,
+        // and we can iterate through each NdefRecord, decode its payload
+        // according to its TNF & type
+        const ndefRecords = tag.ndefMessage;
 
-  const Enabled = () => {
-    console.log('enabled is :', NfcManager.isEnabled);
-  };
+        function decodeNdefRecord(record) {
+            if (Ndef.isType(record, Ndef.TNF_WELL_KNOWN, Ndef.RTD_TEXT)) {
+                return Ndef.text.decodePayload(record.payload);
+            }
 
-  const readNdef = () => {
-    NfcManager.registerTagEvent((tag) => console.log(tag))
-      .then(() => NfcManager.requestTechnology(NfcTech.Ndef))
-      .then(() => NfcManager.getTag())
-      .then((tag) => {
-        console.log(JSON.stringify(tag));
-      })
-      .then(() => NfcManager.getNdefMessage())
-      .then((tag) => {
-        console.log('tag is ', tag);
-      });
-  };
+            return ['unknown', '---']
+        }
 
+        parsed = ndefRecords.map(decodeNdefRecord);
+    }
+    this.setState({parsed});
+
+    NfcManager.setAlertMessageIOS('Login Successful');
+    NfcManager.unregisterTagEvent().catch(() => 0);
+
+
+    // Decrypt the NFC data
+    var content = this.state.parsed[0];
+    console.log('Content from read:', content)
+    var endOfIV = content.indexOf(' ~ ')
+    var iv = content.substring(0,endOfIV).trim()
+    var cipher = content.substring(endOfIV+3)
+
+    this.generateKey('dcnfjlkbd298SKDH', 'DCJKN278hdsb', 5000, 256).then(key => {
+      this.asyncDecrypt(cipher, key, iv)
+
+    })
+  }
+
+
+  
+render(){
   return (
     <SafeAreaView style={{padding: 20}}>
       <Text>NFC SCANNER</Text>
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={Start}>
-        <Text>Initiate Scanner</Text>
-      </TouchableOpacity>
+
 
       <TouchableOpacity
         style={{
@@ -93,7 +95,7 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={Read}>
+        onPress={this.readData}>
         <Text>Read</Text>
       </TouchableOpacity>
 
@@ -105,33 +107,13 @@ export default function App() {
           borderWidth: 1,
           borderColor: 'black',
         }}
-        onPress={Support}>
-        <Text>is Supported ? </Text>
+        onPress={this._onTagDiscovered}>
+        <Text>is tag Discovered???</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={Enabled}>
-        <Text>is Enabled ? </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={{
-          padding: 10,
-          width: 200,
-          margin: 20,
-          borderWidth: 1,
-          borderColor: 'black',
-        }}
-        onPress={readNdef}>
-        <Text>Read Ndef </Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
+}
+  
+export default App;
